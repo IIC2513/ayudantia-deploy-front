@@ -1,70 +1,121 @@
-# Getting Started with Create React App
+# Pasos para deployar tu frontend (Por si no te quedó claro con el video)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Crea tu aplicación de React
 
-## Available Scripts
+En primer lugar, tienes que crear tu aplicación y correrla. Para ello debes correr el siguiente comando en el directorio principal de tu repositorio de GitHub:
 
-In the project directory, you can run:
+`npx create-react-app .`
 
-### `npm start`
+Luego, para correr la aplicación:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+`npm start`
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Buildea la aplicación
 
-### `npm test`
+Para hacer esto se debe correr el comando:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+`npm run build`
 
-### `npm run build`
+Luego de haberlo ejecutado, se debe haber creado una carpeta que se llama *build*.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Crea el archivo netlify.toml
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Para este paso, se debe crear un archivo *netlify.toml* que se encuentre en el directorio principal del repositorio. Este debe contener lo siguiente:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```
+[build]
+command = "npm run build"
+publish = "build"
+```
 
-### `npm run eject`
+## Realizar el setup del workflow de node.js
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Al terminar los pasos previos, es importante que hagas push a los cambios que realizaste previamente. Después, entras a la página del repositorio y accedes a actions. Posteriormente, debes buscar node.js, realizar la configuración y commitear los cambios. Luego debes hacer `git pull` de los cambios en que realizaste del workflow de node.js.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Login en Netlify y creación de página
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+En este paso vinculas tu cuenta de GitHub con Netlify y creas una página usando y arrastrando la carpeta `./build` que se encuentra en el directorio principal del repositorio.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Obtención de Secrets
 
-## Learn More
+En este paso debes crear un token en "User Settings" -> "Applications" -> "Personal access token" en la página de Netlify. Recordar que la duración del token debe ser de por lo menos la duración del curso.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Posteriormente, se debe incluir en los secrets de git, con el nombre de `NETLIFY_AUTH_TOKEN`. Esto se puede hacer en "Repositorio de GitHub" -> "Settings" -> "Secrets and variables" -> "Actions" -> "Repository secrets".
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+De una manera similar se debe recuperar el id de la página de Netlify. Para ello, se ingresa a "Sites" -> "Nombre de tu sitio" -> "Site configuration" -> "Site details" -> "Site ID".
 
-### Code Splitting
+Finalmente, se incluye en los secrets del repositorio en GitHub, con el nombre `NETLIFY_SITE_ID`.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Cambio del archivo node.js.yml
 
-### Analyzing the Bundle Size
+El archivo yml que les entrega GitHub se ve de la siguiente forma:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+name: Node.js CI
 
-### Making a Progressive Web App
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+jobs:
+  build:
 
-### Advanced Configuration
+    runs-on: ubuntu-latest
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
-### Deployment
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Para que el workflow funcione, debe ser cambiado por lo siguiente:
 
-### `npm run build` fails to minify
+```
+name: Node.js CI
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test
+
+    - name: Netlify Deploy
+
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      run: netlify deploy --prod
+```
+
+Finalmente, se debe realizar un commit de los cambios y el deployment del frontend debería estar listo.
+
+Ayudantía realizada por @PSepulvedaS
